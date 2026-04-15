@@ -1,4 +1,5 @@
-const firebaseConfig = {
+// ── FIREBASE CONFIG ──
+export const firebaseConfig = {
   apiKey: "AIzaSyCux-Zu4NtHdba_xV9tHPG3EoSbxNH-iaY",
   authDomain: "synnlab.firebaseapp.com",
   projectId: "synnlab",
@@ -9,12 +10,12 @@ const firebaseConfig = {
 };
 
 // ── GOOGLE CALENDAR CONFIG ──
-const CALENDAR_ID = "c_11826ce2a0863e61725e61ca90ed7560418d88d94590c691bc935c0a415794d0@group.calendar.google.com";
-const CALENDAR_API_KEY = "AIzaSyCetKTh3b94ojpvivdWyeM2BS0bYJXhfW8";
-const CALENDAR_FULL_URL = "https://calendar.google.com/calendar/u/0?cid=Y18xMTgyNmNlMmEwODYzZTYxNzI1ZTYxY2E5MGVkNzU2MDQxOGQ4OGQ5NDU5MGM2OTFiYzkzNWMwYTQxNTc5NGQwQGdyb3VwLmNhbGVuZGFyLmdvb2dsZS5jb20";
+export const CALENDAR_ID = "c_11826ce2a0863e61725e61ca90ed7560418d88d94590c691bc935c0a415794d0@group.calendar.google.com";
+export const CALENDAR_API_KEY = "AIzaSyCetKTh3b94ojpvivdWyeM2BS0bYJXhfW8";
+export const CALENDAR_FULL_URL = "https://calendar.google.com/calendar/u/0?cid=Y18xMTgyNmNlMmEwODYzZTYxNzI1ZTYxY2E5MGVkNzU2MDQxOGQ4OGQ5NDU5MGM2OTFiYzkzNWMwYTQxNTc5NGQwQGdyb3VwLmNhbGVuZGFyLmdvb2dsZS5jb20";
 
 // ── TEACHER DATA ──
-const TEACHERS = [
+export const TEACHERS = [
   {
     id: "ulland",
     name: "Mr. Ulland",
@@ -117,7 +118,7 @@ const TEACHERS = [
 ];
 
 // ── STUDENT INTERVIEWS ──
-const INTERVIEWS = [
+export const INTERVIEWS = [
   {
     name: "Isabel Hoeltje",
     grade: "10th Grade",
@@ -153,7 +154,7 @@ const INTERVIEWS = [
 ];
 
 // ── LOCATIONS ──
-const LOCATIONS = [
+export const LOCATIONS = [
   "Math Room",
   "Science Room",
   "English Room",
@@ -163,4 +164,7 @@ const LOCATIONS = [
   "Other"
 ];
 
-const ADMIN_PASSWORD = "SynnStaff26";
+export const ADMIN_PASSWORD = "SynnStaff26";
+
+// Make variables globally available for inline onclick handlers
+window.CALENDAR_FULL_URL = CALENDAR_FULL_URL;
