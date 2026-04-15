@@ -3,17 +3,36 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getFirestore, doc, getDoc, setDoc, collection, addDoc, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+// Import data
+import { 
+  firebaseConfig, 
+  CALENDAR_ID, 
+  CALENDAR_API_KEY, 
+  CALENDAR_FULL_URL,
+  TEACHERS, 
+  INTERVIEWS, 
+  LOCATIONS, 
+  ADMIN_PASSWORD 
+} from './data.js';
+
 let db;
 let teacherLocations = {};
 let isAdminLoggedIn = false;
 
+// Make these available globally
+window.CALENDAR_FULL_URL = CALENDAR_FULL_URL;
+window.TEACHERS = TEACHERS;
+
 async function initFirebase() {
   try {
+    console.log('Initializing Firebase...');
     const app = initializeApp(firebaseConfig);
     db = getFirestore(app);
+    console.log('Firebase initialized successfully');
     await loadLocations();
   } catch (e) {
     console.warn("Firebase init error:", e);
+    // Fallback to default locations
     TEACHERS.forEach(t => { teacherLocations[t.id] = t.defaultLocation; });
     renderTeachers();
   }
@@ -23,16 +42,28 @@ async function initFirebase() {
 async function loadUpcomingEvents() {
   const container = document.getElementById('upcoming-events');
   if (!container) return;
+  
   container.innerHTML = '<div class="events-loading">Loading upcoming events...</div>';
+  
   try {
     const now = new Date().toISOString();
     const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CALENDAR_ID)}/events?key=${CALENDAR_API_KEY}&timeMin=${encodeURIComponent(now)}&maxResults=4&singleEvents=true&orderBy=startTime`;
+    
+    console.log('Fetching calendar events...');
     const res = await fetch(url);
+    
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+    
     const data = await res.json();
+    console.log('Calendar data received:', data);
+    
     if (!data.items || data.items.length === 0) {
       container.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:1.5rem 0;">No upcoming events scheduled.</p>';
       return;
     }
+    
     container.innerHTML = data.items.map(event => {
       const start = event.start.dateTime || event.start.date;
       const date = new Date(start);
@@ -41,6 +72,7 @@ async function loadUpcomingEvents() {
       const timeStr = isAllDay ? 'All Day' : date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
       const month = date.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
       const day = date.getDate();
+      
       return `
         <div class="event-item">
           <div class="event-date-badge">
@@ -50,27 +82,48 @@ async function loadUpcomingEvents() {
           <div class="event-info">
             <div class="event-title">${event.summary || 'Untitled Event'}</div>
             <div class="event-meta">${dateStr} · ${timeStr}${event.location ? ' · ' + event.location : ''}</div>
-            ${event.description ? `<div class="event-desc">${event.description}</div>` : ''}
+            ${event.description ? `<div class="event-desc">${event.description.substring(0, 100)}${event.description.length > 100 ? '...' : ''}</div>` : ''}
           </div>
         </div>`;
     }).join('');
   } catch (e) {
-    container.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:1.5rem 0;">Could not load events — make sure the calendar is set to public.</p>';
-    console.warn('Calendar fetch error:', e);
+    console.error('Calendar fetch error:', e);
+    container.innerHTML = `
+      <div style="color:var(--text-muted);text-align:center;padding:1.5rem 0;">
+        <p>Unable to load calendar events.</p>
+        <p style="font-size:0.85rem;margin-top:0.5rem;">
+          <a href="${CALENDAR_FULL_URL}" target="_blank" style="color:var(--green);text-decoration:underline;">
+            View calendar directly →
+          </a>
+        </p>
+      </div>
+    `;
   }
 }
 
 // ── LOAD LOCATIONS FROM FIRESTORE ──
 async function loadLocations() {
   try {
-    const snap = await getDoc(doc(db, "config", "teacherLocations"));
+    if (!db) {
+      throw new Error('Firestore not initialized');
+    }
+    
+    const docRef = doc(db, "config", "teacherLocations");
+    const snap = await getDoc(docRef);
+    
     if (snap.exists()) {
-      teacherLocations = snap.data();
+      const data = snap.data();
+      teacherLocations = data;
+      console.log('Loaded locations from Firestore:', teacherLocations);
     } else {
+      console.log('No locations found, using defaults');
       TEACHERS.forEach(t => { teacherLocations[t.id] = t.defaultLocation; });
+      // Create the document with defaults
+      await setDoc(docRef, teacherLocations);
     }
     renderTeachers();
   } catch (e) {
+    console.warn('Error loading locations:', e);
     TEACHERS.forEach(t => { teacherLocations[t.id] = t.defaultLocation; });
     renderTeachers();
   }
@@ -80,8 +133,16 @@ async function loadLocations() {
 async function saveLocations(updates) {
   try {
     Object.assign(teacherLocations, updates);
-    await setDoc(doc(db, "config", "teacherLocations"), teacherLocations);
-    return true;
+    
+    if (db) {
+      const docRef = doc(db, "config", "teacherLocations");
+      await setDoc(docRef, teacherLocations);
+      console.log('Saved locations to Firestore:', teacherLocations);
+      return true;
+    } else {
+      console.warn('Firestore not available, saved locally only');
+      return false;
+    }
   } catch (e) {
     console.error("Save error:", e);
     return false;
@@ -90,24 +151,42 @@ async function saveLocations(updates) {
 
 // ── NAVIGATION ──
 function navigate(pageId) {
+  console.log('Navigating to:', pageId);
+  
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+  
   const page = document.getElementById('page-' + pageId);
   if (page) page.classList.add('active');
+  
   const link = document.querySelector(`[data-page="${pageId}"]`);
   if (link) link.classList.add('active');
-  document.querySelector('.nav-links').classList.remove('open');
+  
+  document.querySelector('.nav-links')?.classList.remove('open');
   window.scrollTo(0, 0);
+  
+  // Refresh content when navigating to specific pages
+  if (pageId === 'teachers') {
+    renderTeachers();
+  } else if (pageId === 'interviews') {
+    renderInterviews();
+  } else if (pageId === 'admin' && isAdminLoggedIn) {
+    renderAdminPanel();
+  }
 }
 
 // ── RENDER TEACHERS ──
 function renderTeachers(filter = 'all') {
   const grid = document.getElementById('teachers-grid');
   if (!grid) return;
-  const filtered = filter === 'all' ? TEACHERS : TEACHERS.filter(t =>
-    t.subject.toLowerCase().includes(filter.toLowerCase()) ||
-    (filter === 'coach' && (t.subject.toLowerCase().includes('coach') || t.subject.toLowerCase().includes('specialist')))
-  );
+  
+  const filtered = filter === 'all' ? TEACHERS : TEACHERS.filter(t => {
+    if (filter === 'coach') {
+      return t.subject.toLowerCase().includes('coach') || t.subject.toLowerCase().includes('specialist');
+    }
+    return t.subject.toLowerCase().includes(filter.toLowerCase());
+  });
+  
   grid.innerHTML = filtered.map(t => {
     const loc = teacherLocations[t.id] || t.defaultLocation;
     return `
@@ -133,12 +212,14 @@ function renderTeachers(filter = 'all') {
 function renderInterviews() {
   const grid = document.getElementById('interviews-grid');
   if (!grid) return;
+  
   const questions = [
     { q: "Skills Developed", key: "skills" },
     { q: "Biggest Win", key: "win" },
     { q: "Biggest Challenge", key: "challenge" },
     { q: "Who Would Thrive Here?", key: "recommend" }
   ];
+  
   grid.innerHTML = INTERVIEWS.map(iv => `
     <div class="interview-card">
       <div class="interview-header">
@@ -162,27 +243,35 @@ function renderInterviews() {
 function renderAdminPanel() {
   const grid = document.getElementById('admin-grid');
   if (!grid) return;
+  
   grid.innerHTML = TEACHERS.map(t => {
     const cur = teacherLocations[t.id] || t.defaultLocation;
+    const isOther = !LOCATIONS.slice(0, -1).includes(cur);
     return `
       <div class="admin-teacher-card">
         <div class="admin-teacher-name">${t.name}</div>
-        <select id="admin-loc-${t.id}">
-          ${LOCATIONS.map(l => `<option value="${l}" ${l===cur?'selected':''}>${l}</option>`).join('')}
+        <select id="admin-loc-${t.id}" class="location-select">
+          ${LOCATIONS.map(l => `<option value="${l}" ${l===cur||(l==='Other'&&isOther)?'selected':''}>${l}</option>`).join('')}
         </select>
-        <div id="other-wrap-${t.id}" style="display:${cur==='Other'?'block':'none'}">
+        <div id="other-wrap-${t.id}" style="display:${isOther?'block':'none'}">
           <input type="text" id="admin-other-${t.id}" placeholder="Type location..."
-            value="${!LOCATIONS.includes(cur) && cur !== 'Other' ? cur : ''}"
+            value="${isOther ? cur : ''}"
             style="width:100%;padding:0.5rem 0.8rem;border:1.5px solid #d0dbd3;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.88rem;margin-top:0.5rem;outline:none;background:var(--cream);">
         </div>
       </div>`;
   }).join('');
+  
+  // Add event listeners to selects
   TEACHERS.forEach(t => {
     const sel = document.getElementById(`admin-loc-${t.id}`);
-    if (sel) sel.addEventListener('change', () => {
-      const wrap = document.getElementById(`other-wrap-${t.id}`);
-      if (wrap) wrap.style.display = sel.value === 'Other' ? 'block' : 'none';
-    });
+    if (sel) {
+      sel.addEventListener('change', () => {
+        const wrap = document.getElementById(`other-wrap-${t.id}`);
+        if (wrap) {
+          wrap.style.display = sel.value === 'Other' ? 'block' : 'none';
+        }
+      });
+    }
   });
 }
 
@@ -190,17 +279,23 @@ function renderAdminPanel() {
 function setupAdminLogin() {
   const form = document.getElementById('admin-login-form');
   if (!form) return;
+  
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const pw = document.getElementById('admin-pw').value;
     const err = document.getElementById('admin-error');
+    
     if (pw === ADMIN_PASSWORD) {
       isAdminLoggedIn = true;
       document.getElementById('admin-login-section').style.display = 'none';
       document.getElementById('admin-panel-section').style.display = 'block';
       renderAdminPanel();
+      if (err) err.style.display = 'none';
     } else {
-      if (err) { err.style.display = 'block'; err.textContent = 'Incorrect password. Please try again.'; }
+      if (err) { 
+        err.style.display = 'block'; 
+        err.textContent = 'Incorrect password. Please try again.'; 
+      }
     }
   });
 }
@@ -208,9 +303,11 @@ function setupAdminLogin() {
 // ── SAVE ALL LOCATIONS ──
 window.saveAllLocations = async function() {
   const updates = {};
+  
   TEACHERS.forEach(t => {
     const sel = document.getElementById(`admin-loc-${t.id}`);
     if (!sel) return;
+    
     let val = sel.value;
     if (val === 'Other') {
       const inp = document.getElementById(`admin-other-${t.id}`);
@@ -218,13 +315,16 @@ window.saveAllLocations = async function() {
     }
     updates[t.id] = val;
   });
+  
   const ok = await saveLocations(updates);
   const msg = document.getElementById('admin-save-msg');
+  
   if (msg) {
     msg.style.display = 'block';
-    msg.textContent = ok ? '✓ Locations saved successfully!' : '⚠ Saved locally (Firebase unavailable).';
+    msg.textContent = ok ? '✓ Locations saved successfully!' : '✓ Saved locally (Firebase unavailable).';
     setTimeout(() => { msg.style.display = 'none'; }, 3000);
   }
+  
   renderTeachers();
 };
 
@@ -232,30 +332,49 @@ window.saveAllLocations = async function() {
 function setupContactForm() {
   const form = document.getElementById('contact-form');
   if (!form) return;
+  
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    
     const name = document.getElementById('cf-name').value.trim();
     const email = document.getElementById('cf-email').value.trim();
     const other = document.getElementById('cf-other').value.trim();
+    
+    if (!name || !email) {
+      alert('Please fill in your name and email.');
+      return;
+    }
+    
     const btn = form.querySelector('button[type="submit"]');
+    const originalText = btn.textContent;
     btn.textContent = 'Sending...';
     btn.disabled = true;
+    
     try {
       if (db) {
         await addDoc(collection(db, "contactSubmissions"), {
-          name, email, other, timestamp: serverTimestamp()
+          name, 
+          email, 
+          message: other,
+          timestamp: serverTimestamp()
         });
+        console.log('Contact form submitted successfully');
+      } else {
+        console.log('Contact submission (Firebase unavailable):', { name, email, other });
       }
+      
       form.reset();
       const succ = document.getElementById('form-success');
-      if (succ) succ.style.display = 'block';
-      btn.textContent = 'Send Message';
-      btn.disabled = false;
-      setTimeout(() => { if (succ) succ.style.display = 'none'; }, 4000);
+      if (succ) {
+        succ.style.display = 'block';
+        setTimeout(() => { succ.style.display = 'none'; }, 4000);
+      }
     } catch (err) {
-      btn.textContent = 'Send Message';
+      console.error('Contact form error:', err);
+      alert('Submission failed. Please try again or contact us directly.');
+    } finally {
+      btn.textContent = originalText;
       btn.disabled = false;
-      alert('Submission failed. Please try again.');
     }
   });
 }
@@ -271,11 +390,22 @@ function setupFilterTabs() {
   });
 }
 
-// ── HAMBURGER ──
+// ── HAMBURGER MENU ──
 function setupHamburger() {
   const btn = document.getElementById('hamburger');
   const links = document.querySelector('.nav-links');
-  if (btn && links) btn.addEventListener('click', () => links.classList.toggle('open'));
+  if (btn && links) {
+    btn.addEventListener('click', () => {
+      links.classList.toggle('open');
+    });
+  }
+  
+  // Close menu when clicking a link
+  document.querySelectorAll('.nav-links a').forEach(link => {
+    link.addEventListener('click', () => {
+      links.classList.remove('open');
+    });
+  });
 }
 
 // ── ADMIN LOGOUT ──
@@ -283,19 +413,27 @@ window.adminLogout = function() {
   isAdminLoggedIn = false;
   document.getElementById('admin-login-section').style.display = 'block';
   document.getElementById('admin-panel-section').style.display = 'none';
-  document.getElementById('admin-pw').value = '';
+  const pwField = document.getElementById('admin-pw');
+  if (pwField) pwField.value = '';
 };
 
+// ── EXPOSE FUNCTIONS GLOBALLY ──
 window.navigate = navigate;
 
 // ── INIT ──
-document.addEventListener('DOMContentLoaded', () => {
-  initFirebase();
+document.addEventListener('DOMContentLoaded', async () => {
+  console.log('DOM loaded, initializing app...');
+  
+  await initFirebase();
   renderInterviews();
-  loadUpcomingEvents();
+  await loadUpcomingEvents();
   setupAdminLogin();
   setupContactForm();
   setupFilterTabs();
   setupHamburger();
+  
+  // Start on home page
   navigate('home');
+  
+  console.log('App initialization complete');
 });
