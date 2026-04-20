@@ -175,7 +175,7 @@ function navigate(pageId) {
   }
 }
 
-// ── RENDER TEACHERS ──
+// ── RENDER TEACHERS (Updated Version) ──
 function renderTeachers(filter = 'all') {
   const grid = document.getElementById('teachers-grid');
   if (!grid) return;
@@ -190,11 +190,9 @@ function renderTeachers(filter = 'all') {
   grid.innerHTML = filtered.map(t => {
     const loc = teacherLocations[t.id] || t.defaultLocation;
 
-    // DECIDE: Show image if it exists, otherwise show initials
+    // This logic checks if an image exists; if not, it uses initials
     const photoContent = t.image 
-      ? `<img src="${t.image}" alt="${t.name}" 
-              style="width:100%; height:100%; object-fit:cover;" 
-              onerror="this.parentElement.innerHTML='<div class=\'initials\'>${t.initials}</div>'">` 
+      ? `<img src="${t.image}" alt="${t.name}" style="width:100%; height:100%; object-fit:cover;">` 
       : `<div class="initials">${t.initials}</div>`;
 
     return `
