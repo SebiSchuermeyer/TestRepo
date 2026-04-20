@@ -190,9 +190,11 @@ function renderTeachers(filter = 'all') {
   grid.innerHTML = filtered.map(t => {
     const loc = teacherLocations[t.id] || t.defaultLocation;
 
-    // This new logic decides whether to show an <img> or the initials
+    // DECIDE: Show image if it exists, otherwise show initials
     const photoContent = t.image 
-      ? `<img src="${t.image}" alt="${t.name}" style="width:100%; height:100%; object-fit:cover;">` 
+      ? `<img src="${t.image}" alt="${t.name}" 
+              style="width:100%; height:100%; object-fit:cover;" 
+              onerror="this.parentElement.innerHTML='<div class=\'initials\'>${t.initials}</div>'">` 
       : `<div class="initials">${t.initials}</div>`;
 
     return `
@@ -213,6 +215,7 @@ function renderTeachers(filter = 'all') {
       </div>`;
   }).join('');
 }
+
 // ── RENDER INTERVIEWS ──
 function renderInterviews() {
   const grid = document.getElementById('interviews-grid');
