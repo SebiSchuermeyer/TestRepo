@@ -82,7 +82,7 @@ export const TEACHERS = [
   {
     id: "hellwig",
     name: "Mr. Hellwig",
-    image: "hellwig.png",
+    image: "TestRepo/hellwig.png",
     subject: "History",
     initials: "H",
     schedule: "Traditional: Monday & Wednesday",
