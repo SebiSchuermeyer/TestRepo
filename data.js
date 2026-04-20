@@ -82,6 +82,7 @@ export const TEACHERS = [
   {
     id: "hellwig",
     name: "Mr. Hellwig",
+    image: "hellwig.png",
     subject: "History",
     initials: "H",
     schedule: "Traditional: Monday & Wednesday",
