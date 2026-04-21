@@ -268,7 +268,10 @@ function renderTeachers(filter = 'all') {
     return `
       <div class="teacher-card" id="tc-${t.id}">
         <div class="teacher-photo" id="photo-${t.id}">
-          <div class="initials">${t.initials}</div>
+          ${t.photo
+            ? `<img src="${t.photo}" alt="${t.name}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" /><div class="initials" style="display:none;">${t.initials}</div>`
+            : `<div class="initials">${t.initials}</div>`
+          }
         </div>
         <div class="teacher-body">
           <div class="teacher-name">${t.name}</div>
