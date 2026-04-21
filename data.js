@@ -82,7 +82,7 @@ export const TEACHERS = [
   {
     id: "hellwig",
     name: "Mr. Hellwig",
-    image: "TestRepo/hellwig.png",
+    photo: "images/teachers/hellwig.png",
     subject: "History",
     initials: "H",
     schedule: "Traditional: Monday & Wednesday",
@@ -101,6 +101,7 @@ export const TEACHERS = [
   {
     id: "underwood",
     name: "Mrs. Underwood",
+    photo: "images/teachers/underwood.jpg",
     subject: "Meaningful Learning Specialist",
     initials: "U",
     schedule: "In Lab daily",
