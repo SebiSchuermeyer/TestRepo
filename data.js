@@ -19,6 +19,7 @@ export const TEACHERS = [
   {
     id: "ulland",
     name: "Mr. Ulland",
+    photo: "images/teachers/ulland.png",
     subject: "Mathematics",
     initials: "U",
     schedule: "Traditional: Monday & Wednesday | In Lab: Tuesday, Thursday, Friday",
