@@ -19,6 +19,7 @@ export const TEACHERS = [
   {
     id: "ulland",
     name: "Mr. Ulland",
+    photo: "images/teachers/ulland.png",
     subject: "Mathematics",
     initials: "U",
     schedule: "Traditional: Monday & Wednesday | In Lab: Tuesday, Thursday, Friday",
@@ -28,6 +29,7 @@ export const TEACHERS = [
   {
     id: "pletz",
     name: "Mr. Pletz",
+    photo: "images/teachers/pletz.png",
     subject: "Mathematics",
     initials: "P",
     schedule: "Traditional: Tuesday & Thursday | In Lab: Monday, Wednesday, Friday",
@@ -37,6 +39,7 @@ export const TEACHERS = [
   {
     id: "tuertscher",
     name: "Mrs. Tuertscher",
+    photo: "images/teachers/tuertscher.png",
     subject: "English",
     initials: "T",
     schedule: "Traditional: Tuesday & Thursday",
@@ -46,6 +49,7 @@ export const TEACHERS = [
   {
     id: "feist",
     name: "Mrs. Feist",
+    photo: "images/teachers/feist.png",
     subject: "English",
     initials: "F",
     schedule: "Traditional: Monday & Wednesday",
@@ -55,6 +59,7 @@ export const TEACHERS = [
   {
     id: "langdon",
     name: "Mr. Langdon",
+    photo: "images/teachers/langdon.png",
     subject: "Science",
     initials: "L",
     schedule: "Traditional: Tuesday & Thursday",
@@ -64,6 +69,7 @@ export const TEACHERS = [
   {
     id: "arnold",
     name: "Mr. Arnold",
+    photo: "images/teachers/arnold.png",
     subject: "Science",
     initials: "A",
     schedule: "Traditional: Monday & Wednesday",
@@ -73,6 +79,7 @@ export const TEACHERS = [
   {
     id: "fogelson",
     name: "Mr. Fogelson",
+    photo: "images/teachers/fogelson.png",
     subject: "History",
     initials: "F",
     schedule: "Traditional: Tuesday, Thursday, Friday | In Lab: Monday, Wednesday",
@@ -92,6 +99,7 @@ export const TEACHERS = [
   {
     id: "conatser",
     name: "Mrs. Conatser",
+    photo: "images/teachers/conatser.png",
     subject: "Academic Coach",
     initials: "C",
     schedule: "In Lab daily",
@@ -111,6 +119,7 @@ export const TEACHERS = [
   {
     id: "burpee",
     name: "Mrs. Burpee",
+    photo: "images/teachers/burpee.png",
     subject: "Academic Coach",
     initials: "B",
     schedule: "In Lab daily",
