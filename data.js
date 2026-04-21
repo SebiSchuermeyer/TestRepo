@@ -19,7 +19,6 @@ export const TEACHERS = [
   {
     id: "ulland",
     name: "Mr. Ulland",
-    photo: "images/teachers/ulland.png",
     subject: "Mathematics",
     initials: "U",
     schedule: "Traditional: Monday & Wednesday | In Lab: Tuesday, Thursday, Friday",
@@ -79,7 +78,6 @@ export const TEACHERS = [
   {
     id: "fogelson",
     name: "Mr. Fogelson",
-    photo: "images/teachers/fogelson.png",
     subject: "History",
     initials: "F",
     schedule: "Traditional: Tuesday, Thursday, Friday | In Lab: Monday, Wednesday",
@@ -119,7 +117,6 @@ export const TEACHERS = [
   {
     id: "burpee",
     name: "Mrs. Burpee",
-    photo: "images/teachers/burpee.png",
     subject: "Academic Coach",
     initials: "B",
     schedule: "In Lab daily",
