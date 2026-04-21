@@ -119,7 +119,7 @@ export const TEACHERS = [
   {
     id: "burpee",
     name: "Mrs. Burpee",
-    photo: "image/teachers/burpee.png",
+    photo: "images/teachers/burpee.png",
     subject: "Academic Coach",
     initials: "B",
     schedule: "In Lab daily",
