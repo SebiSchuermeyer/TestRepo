@@ -15,6 +15,10 @@ import {
   ADMIN_PASSWORD 
 } from './data.js';
 
+// ── GOOGLE DRIVE GALLERY CONFIG ──
+const DRIVE_FOLDER_ID = "1tnPSjZXQ9w_f2Lp2RBrSmzttfUrNi8K7";
+const DRIVE_API_KEY   = "AIzaSyD9Bout20qQD8k4Yk9RoN40t9-JkeXZuZc";
+
 let db;
 let teacherLocations = {};
 let isAdminLoggedIn = false;
@@ -101,6 +105,76 @@ async function loadUpcomingEvents() {
   }
 }
 
+// ── GOOGLE DRIVE PHOTO GALLERY ──
+async function loadGallery() {
+  const container = document.querySelector('.gallery-placeholder');
+  if (!container) return;
+
+  container.innerHTML = '<div class="events-loading" style="text-align:center;padding:2rem;">Loading photos...</div>';
+
+  try {
+    // Query the Drive API for image files inside the folder
+    const query = encodeURIComponent(`'${DRIVE_FOLDER_ID}' in parents and mimeType contains 'image/' and trashed = false`);
+    const fields = encodeURIComponent('files(id,name,mimeType,thumbnailLink,webContentLink)');
+    const url = `https://www.googleapis.com/drive/v3/files?q=${query}&key=${DRIVE_API_KEY}&fields=${fields}&pageSize=50`;
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Drive API error: ${res.status}`);
+
+    const data = await res.json();
+    const files = data.files || [];
+
+    if (files.length === 0) {
+      container.innerHTML = `
+        <div style="text-align:center;padding:2rem;color:var(--text-muted);">
+          <div style="font-size:3rem;">📸</div>
+          <p style="font-weight:600;color:var(--green);margin-top:0.5rem;">No photos yet</p>
+          <p>Add images to the connected Google Drive folder and they'll appear here automatically.</p>
+        </div>`;
+      return;
+    }
+
+    // Build a lightbox-ready grid
+    container.innerHTML = `
+      <div class="gallery-grid" style="
+        display:grid;
+        grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+        gap:1rem;">
+        ${files.map((f, i) => {
+          // thumbnailLink is a small preview; swap s220 → s800 for a bigger thumbnail
+          const thumb = f.thumbnailLink
+            ? f.thumbnailLink.replace(/=s\d+$/, '=s800')
+            : `https://drive.google.com/thumbnail?id=${f.id}&sz=w800`;
+          const full  = `https://drive.google.com/file/d/${f.id}/view`;
+          return `
+            <a href="${full}" target="_blank" rel="noopener"
+               style="display:block;border-radius:12px;overflow:hidden;
+                      box-shadow:0 2px 8px rgba(0,0,0,0.10);
+                      transition:transform 0.2s,box-shadow 0.2s;"
+               onmouseover="this.style.transform='scale(1.03)';this.style.boxShadow='0 6px 20px rgba(0,0,0,0.18)'"
+               onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.10)'">
+              <img src="${thumb}" alt="${f.name}"
+                   loading="lazy"
+                   style="width:100%;height:200px;object-fit:cover;display:block;" />
+            </a>`;
+        }).join('')}
+      </div>
+      <p style="font-size:0.8rem;color:var(--text-muted);margin-top:1.25rem;text-align:center;">
+        ${files.length} photo${files.length !== 1 ? 's' : ''} · Updates automatically when new images are added to the folder
+      </p>`;
+
+  } catch (e) {
+    console.error('Gallery load error:', e);
+    container.innerHTML = `
+      <div style="text-align:center;padding:2rem;color:var(--text-muted);">
+        <div style="font-size:3rem;">📸</div>
+        <p style="font-weight:600;color:var(--green);margin-top:0.5rem;">Unable to load photos</p>
+        <p style="font-size:0.875rem;">Make sure the Drive folder is shared as "Anyone with the link can view".</p>
+        <p style="font-size:0.8rem;margin-top:0.5rem;color:#999;">Error: ${e.message}</p>
+      </div>`;
+  }
+}
+
 // ── LOAD LOCATIONS FROM FIRESTORE ──
 async function loadLocations() {
   try {
@@ -170,12 +244,14 @@ function navigate(pageId) {
     renderTeachers();
   } else if (pageId === 'interviews') {
     renderInterviews();
+  } else if (pageId === 'gallery') {
+    loadGallery();
   } else if (pageId === 'admin' && isAdminLoggedIn) {
     renderAdminPanel();
   }
 }
 
-// ── RENDER TEACHERS (Updated Version) ──
+// ── RENDER TEACHERS ──
 function renderTeachers(filter = 'all') {
   const grid = document.getElementById('teachers-grid');
   if (!grid) return;
@@ -189,16 +265,10 @@ function renderTeachers(filter = 'all') {
   
   grid.innerHTML = filtered.map(t => {
     const loc = teacherLocations[t.id] || t.defaultLocation;
-
-    // This logic checks if an image exists; if not, it uses initials
-    const photoContent = t.image 
-      ? `<img src="${t.image}" alt="${t.name}" style="width:100%; height:100%; object-fit:cover;">` 
-      : `<div class="initials">${t.initials}</div>`;
-
     return `
       <div class="teacher-card" id="tc-${t.id}">
         <div class="teacher-photo" id="photo-${t.id}">
-          ${photoContent}
+          <div class="initials">${t.initials}</div>
         </div>
         <div class="teacher-body">
           <div class="teacher-name">${t.name}</div>
